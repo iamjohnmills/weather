@@ -2,36 +2,164 @@
 <head>
 <title>Weather</title>
 <meta name="viewport" content="width=device-width,initial-scale=0.5">
-<link rel="shortcut icon" href="https://res.cloudinary.com/djgjrhfbt/image/upload/v1567895989/perfect-weather-icon_uhj1jk.png" />
-<link rel="apple-touch-icon" sizes="76x76" href="https://res.cloudinary.com/djgjrhfbt/image/upload/v1567895989/perfect-weather-icon_uhj1jk.png">
+<link rel="shortcut icon" href="favicon.png" />
+<link rel="apple-touch-icon" sizes="76x76" href="favicon.png">
 <style type="text/css">
 html,body { margin: 0; padding: 0; font-family: sans-serif; }
+.header { display: flex; width: 640px; margin-bottom: 10px; justify-content: space-between; }
+.header select { position: relative; top: -2px; }
+.logo { font-weight: bold; font-size: 20px; font-style: italic;}
+.center { width: 640px; padding: 30px; margin: 0 auto; }
+#radar .actions { position: absolute; top: 30px; left: 30px; }
 #radar {  width: 640px; height: 463px; overflow: hidden; position: relative; }
 #radar img { image-rendering: pixelated; display: block; min-height: 480px; min-width: 640px; width: 100%; position: absolute; top: 0; left: 0; }
 #current-temperature { font-size: 120px; position: absolute; right: 50px; top: 40px; color: #fff; text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000; }
 @keyframes me { 0% { top: 28px; left: 28px; width: 0; height: 0; opacity: 0.2; } 100% { top: -1px; left: -1px; width: 58px; height: 58px; opacity: 0; } }
 </style>
 <script type="text/javascript">
-var xhttp = new XMLHttpRequest();
-xhttp.onreadystatechange = function() {
-  if (this.readyState == 4 && this.status == 200) {
-    var json = JSON.parse(xhttp.responseText);
-    document.getElementById("current-temperature").innerHTML = json[0].Temperature.Imperial.Value + '&deg;';
-  }
-};
-xhttp.onerror = function () {
-  document.getElementById("current-temperature").innerHTML = '';
-};
-xhttp.open("GET", "http://dataservice.accuweather.com/currentconditions/v1/351543/?apikey=x73MISjUvjZ7HD9A5tebXfFy3XGGCTxZ", true);
-xhttp.send();
+
+
+const getWeather = (location) => {
+  const parts = location.split(',');
+  const api_key = '332d6116a42015c5852c3e939dcdc8dd';
+  // free api keys here: https://openweathermap.org/price
+  return new Promise((resolve, reject) => {
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+      if (this.readyState == 4 && this.status == 200) {
+        var json = JSON.parse(xhttp.responseText);
+        return resolve(parseInt(json.main.temp));
+      }
+    };
+    xhttp.onerror = function () {
+      return resolve('');
+    };
+    xhttp.open("GET", `http://api.openweathermap.org/data/2.5/weather?units=imperial&q=${parts[0].trim()},${parts[1].trim()},usa&appid=${api_key}`, true);
+    xhttp.send();
+  });
+}
+
+const setLocation = (code) => {
+  const layer_map = `https://sirocco.accuweather.com/nx_mosaic_640x480_public/sir/inmasirmr_${code}.gif`;
+  const layer_roads = `https://vortex.accuweather.com/adc2010/images/radar/metrolayers/roads/${code}_6x4_roads.gif`;
+  const layer_cities = `https://vortex.accuweather.com/adc2010/images/radar/metrolayers/cities/${code}_6x4_cities.gif`;
+  const el_radar_map = document.getElementById('radar-map');
+  const el_radar_roads = document.getElementById('radar-roads');
+  const el_radar_cities = document.getElementById('radar-cities');
+  el_radar_map.style.display = 'none';
+  el_radar_roads.style.display = 'none';
+  el_radar_cities.style.display = 'none';
+  el_radar_map.onload = () => { el_radar_map.style.display = 'block'; }
+  el_radar_map.src = layer_map;
+  el_radar_roads.onload = () => { el_radar_roads.style.display = 'block'; }
+  el_radar_roads.src = layer_roads;
+  el_radar_cities.onload = () => { el_radar_cities.style.display = 'block'; }
+  el_radar_cities.src = layer_cities;
+}
+
+const setWeather = async (location) => {
+  const el_current_temp = document.getElementById('current-temperature');
+  el_current_temp.style.display = 'none';
+  const current_conditions = await getWeather(location);
+  document.getElementById("current-temperature").innerHTML = current_conditions ? current_conditions + '&deg;' : '';
+  el_current_temp.style.display = 'block';
+}
+
+const init = () => {
+  setWeather('Milwaukee,WI');
+  const el_select = document.getElementById('select-location');
+  el_select.addEventListener('change', async (event) => {
+    setLocation(event.target.value);
+    setWeather(event.target.options[event.target.selectedIndex].text);
+  })
+}
+
+document.addEventListener('DOMContentLoaded',init)
+
 </script>
 </head>
 <body>
-  <div id="radar">
-    <img src="https://sirocco.accuweather.com/nx_mosaic_640x480_public/sir/inmasirmr_mke.gif" />
-    <img src="https://vortex.accuweather.com/adc2010/images/radar/metrolayers/roads/mke_6x4_roads.gif" />
-    <img src="https://vortex.accuweather.com/adc2010/images/radar/metrolayers/cities/mke_6x4_cities.gif" />
-    <span id="current-temperature"></span>
+  <div class="center">
+    <div class="header">
+      <div class="logo">Classic Weather</div>
+      <select id="select-location">
+        <option value="mke">Milwaukee, WI</option>
+        <option value="abq">Albuquerque, NM</option>
+        <option value="abe">Allentown, PA</option>
+        <option value="atl">Atlanta, GA</option>
+        <option value="aus">Austin, TX</option>
+        <option value="bwi">Baltimore, MD</option>
+        <option value="bhm">Birmingham, AL</option>
+        <option value="bos">Boston, MA</option>
+        <option value="buf">Buffalo, NY</option>
+        <option value="clt">Charlotte, NC</option>
+        <option value="ord">Chicago, IL</option>
+        <option value="cvg">Cincinatti, OH</option>
+        <option value="cle">Cleveland, OH</option>
+        <option value="cae">Columbia, OH</option>
+        <option value="dfw">Dallas, TX</option>
+        <option value="day">Dayton, OH</option>
+        <option value="den">Denver, CO</option>
+        <option value="dtw">Detroit, MI</option>
+        <option value="fmy">Fort Myers, FL</option>
+        <option value="grb">Green Bay, WI</option>
+        <option value="gso">Greensboro, TX</option>
+        <option value="bdl">Hartford, CT</option>
+        <option value="cxy">Harrisburg, PA</option>
+        <option value="hsv">Hunstville, AL</option>
+        <option value="iah">Houston, TX</option>
+        <option value="ind">Indianapolis, IN</option>
+        <option value="jax">Jacksonville, FL</option>
+        <option value="mci">Kansas City, MO</option>
+        <option value="las">Las Vegas, NV</option>
+        <option value="lit">Little Rock, AK</option>
+        <option value="vny">Los Angeles, CA</option>
+        <option value="lou">Louisville, KY</option>
+        <option value="mem">Memphis, TN</option>
+        <option value="mia">Miami, FL</option>
+        <option value="pou">Middletown, NJ</option>
+        <option value="msp">Minneapolis, MN</option>
+        <option value="mob">Mobile, AL</option>
+        <option value="bna">Nashville, TN</option>
+        <option value="msy">New Orleans, LA</option>
+        <option value="nyc">New York, NY</option>
+        <option value="orf">Norfolk, VA</option>
+        <option value="okc">Oklahoma City, OK</option>
+        <option value="oma">Omaha, NB</option>
+        <option value="mco">Orlando, FL</option>
+        <option value="phl">Philidelphia, PA</option>
+        <option value="phx">Phoenix, AZ</option>
+        <option value="pit">Pittsburgh, PA</option>
+        <option value="pwm">Portland, ME</option>
+        <option value="pdx">Portland, OR</option>
+        <option value="pvd">Providence, RI</option>
+        <option value="rdu">Raleigh, NC</option>
+        <option value="ric">Richmond, VA</option>
+        <option value="roc">Rochester, NY</option>
+        <option value="sac">Sacramento, CA</option>
+        <option value="mbs">Saginaw, MI</option>
+        <option value="slc">Salt Lake City, UT</option>
+        <option value="sat">San Antonio, TX</option>
+        <option value="san">San Deigo, CA</option>
+        <option value="sfo">San Francisco, CA</option>
+        <option value="avp">Scranton, OH</option>
+        <option value="sea">Seattle, WA</option>
+        <option value="stl">St Louis, MO</option>
+        <option value="unv">State College, PA</option>
+        <option value="sgf">Springfield, IL</option>
+        <option value="tlh">Tallahassee, FL</option>
+        <option value="tpa">Tampa, FL</option>
+        <option value="top">Topeka, KS</option>
+        <option value="ttn">Trenton, NJ</option>
+        <option value="dca">Washington, DC</option>
+      </select>
+    </div>
+    <div id="radar">
+      <img id="radar-map" src="https://sirocco.accuweather.com/nx_mosaic_640x480_public/sir/inmasirmr_mke.gif" />
+      <img id="radar-roads" src="https://vortex.accuweather.com/adc2010/images/radar/metrolayers/roads/mke_6x4_roads.gif" />
+      <img id="radar-cities" src="https://vortex.accuweather.com/adc2010/images/radar/metrolayers/cities/mke_6x4_cities.gif" />
+      <span id="current-temperature"></span>
+    </div>
   </div>
 </body>
 </html>
