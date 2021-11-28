@@ -34,7 +34,7 @@ const getWeather = (location) => {
     xhttp.onerror = function () {
       return resolve('');
     };
-    xhttp.open("GET", `http://api.openweathermap.org/data/2.5/weather?units=imperial&q=${parts[0].trim()},${parts[1].trim()},usa&appid=${api_key}`, true);
+    xhttp.open("GET", `https://api.openweathermap.org/data/2.5/weather?units=imperial&q=${parts[0].trim()},${parts[1].trim()},usa&appid=${api_key}`, true);
     xhttp.send();
   });
 }
