@@ -7,7 +7,7 @@
 <style type="text/css">
 * { box-sizing: border-box; }
 html,body,select { margin: 0; padding: 0; font-family:  -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Ubuntu,sans-serif; -webkit-font-smoothing: antialiased; }
-#root { width: 100%; height: 100%; padding: 20px; }
+#root { width: 100%; padding: 20px; }
 header { flex-grow: 0; flex-shrink: 0; z-index: 1; margin: 0 auto; position: relative; width: 640px; display: flex; justify-content: space-between; align-items: flex-end; padding: 0 0 15px 0;}
 header h1 { font-size: 22px; margin: 0; line-height: 1; font-weight: bold; font-style: italic; }
 menu { display: flex; align-items: center; margin: 0; }
@@ -16,13 +16,9 @@ menu select { color: #000; font-size: 14px; appearance: none; border: 0; outline
 .radar .layers { clip-path: inset(0 0 0 round 6px); z-index: 1; position: relative; width: 100%; height: 100%;  }
 .radar .layers > img { z-index: 1; image-rendering: pixelated; position: absolute; top: 0; left: 0; width: 100%; height: 100%;  }
 .overlay { z-index: 2; position: absolute; left: 0; top: 0; right: 0; bottom: 0; background: linear-gradient(to top, #5d5d65, #ffffff); mix-blend-mode: overlay; }
-/*.loading { z-index: 3; display: flex; align-items: center; justify-content: center; position: absolute; left: 0; top: 0; right: 0; bottom: 0; background: linear-gradient(to top, #36d1dc, #5b86e5); }
-.loading:after { content: ''; width: 200px; height: 200px; border-radius: 50%; background: linear-gradient(to top, #ff6115, #ffe200);} */
-.temperature { position: absolute; z-index: 2; right: 20px; top: 20px; color: #fff;  }
+.temperature { position: absolute; z-index: 2; right: 20px; top: 20px; color: #fff; }
 .temperature > svg { width: 200px; height: 200px; }
 .temperature > svg > text { font-family: system-ui; font-style: italic; font-weight: bold; font-size: 110px; fill: #fff; stroke: #000000; stroke-width: 1.5px; stroke-linecap: butt; stroke-linejoin: miter; stroke-opacity: 1; }
-
-
 </style>
 <script type="text/javascript" src="utilities.js"></script>
 <script type="text/javascript" src="cities.js"></script>
@@ -40,7 +36,6 @@ menu select { color: #000; font-size: 14px; appearance: none; border: 0; outline
       this.root = document.getElementById('root');
       this.root.innerHTML = ``;
       const options_html = this.locations.sort((a, b) => a.state.localeCompare(b.state) || a.city.localeCompare(b.city) ).reduce((html,location) => `${html}<option value="${location.code}" ${this.code === location.code ? `selected` : ``}>${location.city}, ${location.state}</option>`,``);
-      this.els.container = createNode({ root: this.root, tag: 'div', className: 'container' });
       this.els.header = createNode({ root: this.root, tag: 'header' });
       this.els.title = createNode({ root: this.els.header, tag: 'h1', innerHTML: `Classic Weather` });
       this.els.menu = createNode({ root: this.els.header, tag: 'menu' });
@@ -49,15 +44,12 @@ menu select { color: #000; font-size: 14px; appearance: none; border: 0; outline
       this.els.temp = createNode({ root: this.els.radar, tag: 'span', className: 'temperature' });
       this.els.layers = createNode({ root: this.els.radar, tag: 'div', className: 'layers' });
       this.els.overlay = createNode({ root: this.els.radar, tag: 'div', className: 'overlay' });
-      // this.els.loading = createNode({ root: this.els.radar, tag: 'div', className: 'loading' });
       this.setLocation(this.code);
     }
     handleChangeCity(event){
       this.setLocation(event.target.value);
     }
     async setLocation(code){
-      // this.els.temp.innerHTML = ``;
-      // this.els.layers.innerHTML = ``;
       const el_radar = await loadImage(`https://sirocco.accuweather.com/nx_mosaic_640x480_public/sir/inmasirmr_${code}.gif`);
       const el_roads = await loadImage(`https://vortex.accuweather.com/adc2010/images/radar/metrolayers/roads/${code}_6x4_roads.gif`);
       const el_cities = await loadImage(`https://vortex.accuweather.com/adc2010/images/radar/metrolayers/cities/${code}_6x4_cities.gif`);
@@ -67,7 +59,6 @@ menu select { color: #000; font-size: 14px; appearance: none; border: 0; outline
         if(response){
           const json = JSON.parse(response);
           const temp = typeof json.main.temp === 'number' ? `${Math.floor(json.main.temp)}&deg;` : ``;
-          // this.els.temp.innerHTML = temp;
           this.els.temp.innerHTML = `<svg viewBox="0 0 200 200">
             <text fill="#fff" x="50%" y="50%" dominant-baseline="middle" text-anchor="middle">${temp}</text>
           </svg>`;
