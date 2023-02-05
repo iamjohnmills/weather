@@ -6,47 +6,27 @@
 <link rel="apple-touch-icon" sizes="76x76" href="favicon.png">
 <style type="text/css">
 * { box-sizing: border-box; }
-html,body { margin: 0; padding: 0; font-family: sans-serif; -webkit-font-smoothing: antialiased; }
+html,body,select { margin: 0; padding: 0; font-family:  -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Ubuntu,sans-serif; -webkit-font-smoothing: antialiased; }
 #root { width: 100%; height: 100%; padding: 20px; }
 header { flex-grow: 0; flex-shrink: 0; z-index: 1; margin: 0 auto; position: relative; width: 640px; display: flex; justify-content: space-between; align-items: flex-end; padding: 0 0 15px 0;}
 header h1 { font-size: 22px; margin: 0; line-height: 1; font-weight: bold; font-style: italic; }
 menu { display: flex; align-items: center; margin: 0; }
 menu select { color: #000; font-size: 14px; appearance: none; border: 0; outline: 0; height: 26px; padding: 0 30px 0 10px; border-radius: 4px; box-shadow: 0 0 1px 1px rgba(0,0,0,0.2); cursor: pointer; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' style='enable-background:new 0 0 512 512' xml:space='preserve'%3E%3Cpath d='M508.667 125.707a10.623 10.623 0 0 0-15.04 0L255.76 363.573 18 125.707c-4.267-4.053-10.987-3.947-15.04.213a10.763 10.763 0 0 0 0 14.827L248.293 386.08a10.623 10.623 0 0 0 15.04 0l245.333-245.333c4.161-4.054 4.161-10.88.001-15.04z'/%3E%3C/svg%3E") no-repeat right 8px center / 12px, linear-gradient(0deg, rgba(230,230,230,1) 0%, rgba(255,255,255,1) 100%); }
-menu .temperature { font-size: 22px; margin-right: 15px; }
-.radar { flex-grow: 0; flex-shrink: 0; margin: 0 auto; position: relative; width: 640px; height: 480px; }
-.radar .layers { clip-path: inset(0 0 0 0 round 6px); position: relative; width: 100%; height: 100%;  }
+.radar { clip-path: inset(0 0 0 round 8px); background: #000; padding: 2px; flex-grow: 0; flex-shrink: 0; margin: 0 auto; position: relative; width: 640px; height: 480px; }
+.radar .layers { clip-path: inset(0 0 0 round 6px); z-index: 1; position: relative; width: 100%; height: 100%;  }
 .radar .layers > img { z-index: 1; image-rendering: pixelated; position: absolute; top: 0; left: 0; width: 100%; height: 100%;  }
+.overlay { z-index: 2; position: absolute; left: 0; top: 0; right: 0; bottom: 0; background: linear-gradient(to top, #5d5d65, #ffffff); mix-blend-mode: overlay; }
+/*.loading { z-index: 3; display: flex; align-items: center; justify-content: center; position: absolute; left: 0; top: 0; right: 0; bottom: 0; background: linear-gradient(to top, #36d1dc, #5b86e5); }
+.loading:after { content: ''; width: 200px; height: 200px; border-radius: 50%; background: linear-gradient(to top, #ff6115, #ffe200);} */
+.temperature { position: absolute; z-index: 2; right: 20px; top: 20px; color: #fff;  }
+.temperature > svg { width: 200px; height: 200px; }
+.temperature > svg > text { font-family: system-ui; font-style: italic; font-weight: bold; font-size: 110px; fill: #fff; stroke: #000000; stroke-width: 1.5px; stroke-linecap: butt; stroke-linejoin: miter; stroke-opacity: 1; }
+
+
 </style>
+<script type="text/javascript" src="utilities.js"></script>
+<script type="text/javascript" src="cities.js"></script>
 <script type="text/javascript">
-
-  const createNode = (options) => {
-    const node = document.createElement(options.tag);
-    if(options.className) node.setAttribute('class',options.className);
-    if(options.innerHTML) node.innerHTML = options.innerHTML;
-    if(options.attributes) Object.keys(options.attributes).forEach(key => node.setAttribute(key,options.attributes[key]) );
-    if(options.style) Object.keys(options.style).forEach(key => node.style[key] = options.style[key]);
-    if(options.event_listeners) Object.keys(options.event_listeners).forEach(key => node.addEventListener(key,options.event_listeners[key]) )
-    if(options.root) options.root.appendChild(node);
-    return node;
-  }
-
-  const xhrURL = (options) => new Promise(resolve => {
-    const xhr = new XMLHttpRequest();
-    xhr.addEventListener('load', () => resolve(xhr.responseText) );
-    xhr.addEventListener('error', () => resolve(false) );
-    xhr.open(options.method ? options.method : 'GET', options.url);
-    if(options.content_type) xhr.setRequestHeader('Content-type', options.content_type);
-    const params = new URLSearchParams(options.params).toString();
-    xhr.send(params);
-  });
-
-  const loadImage = src => new Promise(resolve => {
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.onerror = () => resolve(false);
-    img.src = src;
-  });
-
   class Weather {
     constructor(){
       document.addEventListener('DOMContentLoaded',this.handleContentLoaded.bind(this));
@@ -54,77 +34,7 @@ menu .temperature { font-size: 22px; margin-right: 15px; }
       this.code = 'mke';
       this.api_url = 'https://api.openweathermap.org/data/2.5/weather';
       this.api_key = '332d6116a42015c5852c3e939dcdc8dd'; // free api keys here: https://openweathermap.org/price
-      this.locations = [
-        { code: 'mke', city: 'Milwaukee', state: 'WI' },
-        { code: 'abq', city: 'Albuquerque', state: 'NM' },
-        { code: 'abe', city: 'Allentown', state: 'PA' },
-        { code: 'atl', city: 'Atlanta', state: 'GA' },
-        { code: 'aus', city: 'Austin', state: 'TX' },
-        { code: 'bwi', city: 'Baltimore', state: 'MD' },
-        { code: 'bhm', city: 'Birmingham', state: 'AL' },
-        { code: 'bos', city: 'Boston', state: 'MA' },
-        { code: 'buf', city: 'Buffalo', state: 'NY' },
-        { code: 'clt', city: 'Charlotte', state: 'NC' },
-        { code: 'ord', city: 'Chicago', state: 'IL' },
-        { code: 'cvg', city: 'Cincinatti', state: 'OH' },
-        { code: 'cle', city: 'Cleveland', state: 'OH' },
-        { code: 'cae', city: 'Columbia', state: 'OH' },
-        { code: 'dfw', city: 'Dallas', state: 'TX' },
-        { code: 'day', city: 'Dayton', state: 'OH' },
-        { code: 'den', city: 'Denver', state: 'CO' },
-        { code: 'dtw', city: 'Detroit', state: 'MI' },
-        { code: 'fmy', city: 'Fort Myers', state: 'FL' },
-        { code: 'grb', city: 'Green Bay', state: 'WI' },
-        { code: 'gso', city: 'Greensboro', state: 'TX' },
-        { code: 'bdl', city: 'Hartford', state: 'CT' },
-        { code: 'cxy', city: 'Harrisburg', state: 'PA' },
-        { code: 'hsv', city: 'Hunstville', state: 'AL' },
-        { code: 'iah', city: 'Houston', state: 'TX' },
-        { code: 'ind', city: 'Indianapolis', state: 'IN' },
-        { code: 'jax', city: 'Jacksonville', state: 'FL' },
-        { code: 'mci', city: 'Kansas City', state: 'MO' },
-        { code: 'las', city: 'Las Vegas', state: 'NV' },
-        { code: 'lit', city: 'Little Rock', state: 'AK' },
-        { code: 'vny', city: 'Los Angeles', state: 'CA' },
-        { code: 'lou', city: 'Louisville', state: 'KY' },
-        { code: 'mem', city: 'Memphis', state: 'TN' },
-        { code: 'mia', city: 'Miami', state: 'FL' },
-        { code: 'pou', city: 'Middletown', state: 'NJ' },
-        { code: 'msp', city: 'Minneapolis', state: 'MN' },
-        { code: 'mob', city: 'Mobile', state: 'AL' },
-        { code: 'bna', city: 'Nashville', state: 'TN' },
-        { code: 'msy', city: 'New Orleans', state: 'LA' },
-        { code: 'nyc', city: 'New York', state: 'NY' },
-        { code: 'orf', city: 'Norfolk', state: 'VA' },
-        { code: 'okc', city: 'Oklahoma City', state: 'OK' },
-        { code: 'oma', city: 'Omaha', state: 'NB' },
-        { code: 'mco', city: 'Orlando', state: 'FL' },
-        { code: 'phl', city: 'Philidelphia', state: 'PA' },
-        { code: 'phx', city: 'Phoenix', state: 'AZ' },
-        { code: 'pit', city: 'Pittsburgh', state: 'PA' },
-        { code: 'pwm', city: 'Portland', state: 'ME' },
-        { code: 'pdx', city: 'Portland', state: 'OR' },
-        { code: 'pvd', city: 'Providence', state: 'RI' },
-        { code: 'rdu', city: 'Raleigh', state: 'NC' },
-        { code: 'ric', city: 'Richmond', state: 'VA' },
-        { code: 'roc', city: 'Rochester', state: 'NY' },
-        { code: 'sac', city: 'Sacramento', state: 'CA' },
-        { code: 'mbs', city: 'Saginaw', state: 'MI' },
-        { code: 'slc', city: 'Salt Lake City', state: 'UT' },
-        { code: 'sat', city: 'San Antonio', state: 'TX' },
-        { code: 'san', city: 'San Diego', state: 'CA' },
-        { code: 'sfo', city: 'San Francisco', state: 'CA' },
-        { code: 'avp', city: 'Scranton', state: 'OH' },
-        { code: 'sea', city: 'Seattle', state: 'WA' },
-        { code: 'stl', city: 'St Louis', state: 'MO' },
-        { code: 'unv', city: 'State College', state: 'PA' },
-        { code: 'sgf', city: 'Springfield', state: 'IL' },
-        { code: 'tlh', city: 'Tallahassee', state: 'FL' },
-        { code: 'tpa', city: 'Tampa', state: 'FL' },
-        { code: 'top', city: 'Topeka', state: 'KS' },
-        { code: 'ttn', city: 'Trenton', state: 'NJ' },
-        { code: 'dca', city: 'Washington', state: 'DC' }
-      ]
+      this.locations = cities; // from cities.js
     }
     async handleContentLoaded(event){
       this.root = document.getElementById('root');
@@ -134,18 +44,20 @@ menu .temperature { font-size: 22px; margin-right: 15px; }
       this.els.header = createNode({ root: this.root, tag: 'header' });
       this.els.title = createNode({ root: this.els.header, tag: 'h1', innerHTML: `Classic Weather` });
       this.els.menu = createNode({ root: this.els.header, tag: 'menu' });
-      this.els.temp = createNode({ root: this.els.menu, tag: 'span', className: 'temperature' });
       this.els.select = createNode({ root: this.els.menu, tag: 'select', event_listeners: { change: this.handleChangeCity.bind(this) }, innerHTML: options_html });
       this.els.radar = createNode({ root: this.root, tag: 'div', className: 'radar' });
+      this.els.temp = createNode({ root: this.els.radar, tag: 'span', className: 'temperature' });
       this.els.layers = createNode({ root: this.els.radar, tag: 'div', className: 'layers' });
+      this.els.overlay = createNode({ root: this.els.radar, tag: 'div', className: 'overlay' });
+      // this.els.loading = createNode({ root: this.els.radar, tag: 'div', className: 'loading' });
       this.setLocation(this.code);
     }
     handleChangeCity(event){
       this.setLocation(event.target.value);
     }
     async setLocation(code){
-      this.els.temp.innerHTML = `...`;
-      this.els.layers.innerHTML = ``;
+      // this.els.temp.innerHTML = ``;
+      // this.els.layers.innerHTML = ``;
       const el_radar = await loadImage(`https://sirocco.accuweather.com/nx_mosaic_640x480_public/sir/inmasirmr_${code}.gif`);
       const el_roads = await loadImage(`https://vortex.accuweather.com/adc2010/images/radar/metrolayers/roads/${code}_6x4_roads.gif`);
       const el_cities = await loadImage(`https://vortex.accuweather.com/adc2010/images/radar/metrolayers/cities/${code}_6x4_cities.gif`);
@@ -155,15 +67,14 @@ menu .temperature { font-size: 22px; margin-right: 15px; }
         if(response){
           const json = JSON.parse(response);
           const temp = typeof json.main.temp === 'number' ? `${Math.floor(json.main.temp)}&deg;` : ``;
-          this.els.temp.innerHTML = temp;
-        } else {
-          this.els.temp.innerHTML = ``;
+          // this.els.temp.innerHTML = temp;
+          this.els.temp.innerHTML = `<svg viewBox="0 0 200 200">
+            <text fill="#fff" x="50%" y="50%" dominant-baseline="middle" text-anchor="middle">${temp}</text>
+          </svg>`;
         }
         this.els.layers.appendChild(el_radar);
         this.els.layers.appendChild(el_roads);
         this.els.layers.appendChild(el_cities);
-      } else {
-        this.els.temp.innerHTML = ``;
       }
     }
   }
