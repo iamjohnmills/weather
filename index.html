@@ -6,19 +6,17 @@
 <link rel="apple-touch-icon" sizes="76x76" href="favicon.png">
 <style type="text/css">
 * { box-sizing: border-box; }
-html,body,select { margin: 0; padding: 0; font-family:  -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Ubuntu,sans-serif; -webkit-font-smoothing: antialiased; }
+html,body,select { margin: 0; padding: 0; font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Ubuntu,sans-serif; -webkit-font-smoothing: antialiased; }
 #root { width: 100%; padding: 20px; }
 header { flex-grow: 0; flex-shrink: 0; z-index: 1; margin: 0 auto; position: relative; width: 640px; display: flex; justify-content: space-between; align-items: flex-end; padding: 0 0 15px 0;}
-header h1 { font-size: 22px; margin: 0; line-height: 1; font-weight: bold; font-style: italic; }
+header h1 { font-size: 22px; margin: 0; line-height: 1; font-weight: bold; }
 menu { display: flex; align-items: center; margin: 0; }
 menu select { color: #000; font-size: 14px; appearance: none; border: 0; outline: 0; height: 26px; padding: 0 30px 0 10px; border-radius: 4px; box-shadow: 0 0 1px 1px rgba(0,0,0,0.2); cursor: pointer; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' style='enable-background:new 0 0 512 512' xml:space='preserve'%3E%3Cpath d='M508.667 125.707a10.623 10.623 0 0 0-15.04 0L255.76 363.573 18 125.707c-4.267-4.053-10.987-3.947-15.04.213a10.763 10.763 0 0 0 0 14.827L248.293 386.08a10.623 10.623 0 0 0 15.04 0l245.333-245.333c4.161-4.054 4.161-10.88.001-15.04z'/%3E%3C/svg%3E") no-repeat right 8px center / 12px, linear-gradient(0deg, rgba(230,230,230,1) 0%, rgba(255,255,255,1) 100%); }
-.radar { clip-path: inset(0 0 0 round 8px); background: #000; padding: 2px; flex-grow: 0; flex-shrink: 0; margin: 0 auto; position: relative; width: 640px; height: 480px; }
-.radar .layers { clip-path: inset(0 0 0 round 6px); z-index: 1; position: relative; width: 100%; height: 100%;  }
+.radar { flex-grow: 0; flex-shrink: 0; margin: 0 auto; position: relative; width: 640px; height: 480px; }
+.radar .layers {  z-index: 1; position: relative; width: 100%; height: 100%;  }
 .radar .layers > img { z-index: 1; image-rendering: pixelated; position: absolute; top: 0; left: 0; width: 100%; height: 100%;  }
-.overlay { z-index: 2; position: absolute; left: 0; top: 0; right: 0; bottom: 0; background: linear-gradient(to top, #bbb, #ffffff); mix-blend-mode: overlay; }
-.temperature { position: absolute; z-index: 2; right: 20px; top: 20px; color: #fff; }
-.temperature > svg { width: 200px; height: 200px; }
-.temperature > svg > text { font-family: system-ui; font-style: italic; font-weight: bold; font-size: 110px; fill: #fff; stroke: #000000; stroke-width: 1.5px; stroke-linecap: butt; stroke-linejoin: miter; stroke-opacity: 1; }
+.temperature { position: absolute; z-index: 3; right: 30px; top: 30px; color: #fff; font-size: 120px; text-shadow: 1px 0px #000, 0px 1px #000, -0.5px 0 #000, 4px 4px rgba(0,0,0,0.4); }
+.overlay { z-index: 2; position: absolute; left: 0; top: 0; right: 0; bottom: 0; background:#ffffff4f; mix-blend-mode: overlay; }
 </style>
 <script type="text/javascript" src="utilities.js"></script>
 <script type="text/javascript" src="cities.js"></script>
@@ -59,9 +57,7 @@ menu select { color: #000; font-size: 14px; appearance: none; border: 0; outline
         if(response){
           const json = JSON.parse(response);
           const temp = typeof json.main.temp === 'number' ? `${Math.floor(json.main.temp)}&deg;` : ``;
-          this.els.temp.innerHTML = `<svg viewBox="0 0 200 200">
-            <text fill="#fff" x="50%" y="50%" dominant-baseline="middle" text-anchor="middle">${temp}</text>
-          </svg>`;
+          this.els.temp.innerHTML = temp;
         }
         this.els.layers.appendChild(el_radar);
         this.els.layers.appendChild(el_roads);
@@ -69,9 +65,7 @@ menu select { color: #000; font-size: 14px; appearance: none; border: 0; outline
       }
     }
   }
-
   const weather = new Weather();
-
 </script>
 </head>
 <body>
